@@ -1,8 +1,8 @@
-## React Query
+# React Query
 
 ## 3 core concepts of React Query
 
-### reference in src/store/quick-start
+### reference in `src/store/quick-start`
 
 - Queries
 - Mutations
@@ -50,7 +50,7 @@ When a string query key is passed, it is _converted to an array internally with 
 
 #### Array Keys
 
-## You can use an array with a string and any number of serializable objects to describe it uniquely. Useful for:
+You can use an **array** with a string and any number of serializable objects to describe it uniquely. Useful for:
 
 - Hierarchical or nested resources
   - It's common to pass an **ID**, **index**, or other **primitive**
