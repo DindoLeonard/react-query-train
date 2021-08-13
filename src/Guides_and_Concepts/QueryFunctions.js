@@ -35,7 +35,7 @@ const QueryFunctions = () => {
 
   Todos({ status: 'ok', page: 100 });
 
-  return <div>Hello</div>;
+  return <div>Query Functions</div>;
 };
 
 export default QueryFunctions;

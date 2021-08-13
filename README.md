@@ -105,6 +105,8 @@ function Todos({ todoId }) {
 
 ## Query Functions
 
+reference in `src/Guides_and_Concepts/QueryFunctions.js`
+
 Can litterally be any function that return a promise. The promise that is return should either **resolve the data** or **throw an error**
 
 All of the following below are valid query functions
@@ -161,4 +163,65 @@ useQuery({
   queryFn: fetchTodo,
   ...config,
 });
+```
+
+## Parallel Queries
+
+"Parallel" queries are queries that are executed in parallel, or at the same time so as to maximize fetching concurrency.
+
+### Manual Parallel Queries
+
+Just using any number of `useQuery` hooks side-by-side.
+
+```javascript
+ function App () {
+   // The following queries will execute in parallel
+   const usersQuery = useQuery('users', fetchUsers)
+   const teamsQuery = useQuery('teams', fetchTeams)
+   const projectsQuery = useQuery('projects', fetchProjects)
+   ...
+ }
+```
+
+### Dynamic Parallel Queries with `useQueries`
+
+React Query provides a `useQueries` hook, which you can use to dynamically execute as many queries in parallel as you'd like.
+
+`useQueries` accepts an array of query options objects and returns an array of query results:
+
+```javascript
+function App({ users }) {
+  const userQueries = useQueries(
+    users.map((user) => {
+      return {
+        queryKey: ['user', user.id],
+        queryFn: () => fetchUserById(user.id),
+      };
+    })
+  );
+}
+```
+
+## Dependent Queries
+
+Dependent (or serial) queries depend on previous ones to finish before they can execute. To achieve this, it's as easy as using the enabled option to tell a query when it is ready to run:
+
+```javascript
+// Get the user
+const { data: user } = useQuery(['user', email], getUserByEmail);
+
+const userId = user?.id;
+
+// Then get the user's projects
+const { isIdle, data: projects } = useQuery(
+  ['projects', userId],
+  getProjectsByUser,
+  {
+    // The query will not execute until the userId exists
+    enabled: !!userId,
+  }
+);
+
+// isIdle will be `true` until `enabled` is true and the query begins to fetch.
+// It will then go to the `isLoading` stage and hopefully the `isSuccess` stage :)
 ```
