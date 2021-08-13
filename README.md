@@ -225,3 +225,50 @@ const { isIdle, data: projects } = useQuery(
 // isIdle will be `true` until `enabled` is true and the query begins to fetch.
 // It will then go to the `isLoading` stage and hopefully the `isSuccess` stage :)
 ```
+
+## Background Fetching Indicators
+
+You can extract and use `isFetching` which is one of the returned value from useQuery.
+
+```javascript
+function Todos() {
+  const {
+    status,
+    data: todos,
+    error,
+    isFetching,
+  } = useQuery('todos', fetchTodos);
+
+  return status === 'loading' ? (
+    <span>Loading...</span>
+  ) : status === 'error' ? (
+    <span>Error: {error.message}</span>
+  ) : (
+    <>
+      {isFetching ? <div>Refreshing...</div> : null}
+
+      <div>
+        {todos.map((todo) => (
+          <Todo todo={todo} />
+        ))}
+      </div>
+    </>
+  );
+}
+```
+
+### Displaying Global Background Fetching Loading State
+
+if you would like to show a global loading indicator when any queries are fetching (including in the background), you can use the useIsFetching hook:
+
+```javascript
+import { useIsFetching } from 'react-query';
+
+function GlobalLoadingIndicator() {
+  const isFetching = useIsFetching();
+
+  return isFetching ? (
+    <div>Queries are fetching in the background...</div>
+  ) : null;
+}
+```
