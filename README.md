@@ -53,9 +53,9 @@ When a string query key is passed, it is _converted to an array internally with 
 ## You can use an array with a string and any number of serializable objects to describe it uniquely. Useful for:
 
 - Hierarchical or nested resources
-  - It's common to pass an ID, index, or other primitive
+  - It's common to pass an **ID**, **index**, or other **primitive**
 - Queries with addition parameters
-  - It's common to pass an object of additional options
+  - It's common to pass an **object** of additional options
 
 ```javascript
  // An individual todo
