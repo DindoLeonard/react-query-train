@@ -516,4 +516,177 @@ Using `useInfiniteQuery` is common if you wanted to add "load more" onto an exis
 
 reference in `src/Guides_and_Concepts/InfiniteQueries.js`;
 
-##
+## Placeholder Query Data
+
+Placeholder data allows a query to behave as if it already has data, similar to the initialData option, but **the data is not persisted to the cache**. Good while fetching actual data in background initially.
+
+Ways to suuply placeholder data for a query to the cache before you need it.
+
+- Declaratively:
+  - Provide `placeholderData` to a query to prepopulate its cache if empty
+- Imperatively:
+  - Prefetch or fetch the data using `queryClient` and the `placeholderData` option
+
+### Placeholder Data as a Value
+
+```javascript
+function Todos() {
+  const result = useQuery('todos', () => fetch('/todos'), {
+    placeholderData: placeholderTodos,
+  });
+}
+```
+
+### Placeholder Data as a Function
+
+You can memoize the value or pass a memoized function as the `placeholderData` value:
+
+```javascript
+function Todos() {
+  const placeholderData = useMemo(() => generateFakeTodos(), []);
+  const result = useQuery('todos', () => fetch('/todos'), { placeholderData });
+}
+```
+
+### Placeholder Data from Cache
+
+In some circumstances, you may be able to provide the placeholder data for a query from the cached result of another.
+
+```javascript
+function Todo({ blogPostId }) {
+  const result = useQuery(
+    ['blogPost', blogPostId],
+    () => fetch(`/blogPosts/${blogPostId}`),
+    {
+      placeholderData: () => {
+        // Use the smaller/preview version of the blogPost from the 'blogPosts' query as the placeholder data for this blogPost query
+        return queryClient
+          .getQueryData('blogPosts')
+          ?.find((d) => d.id === blogPostId);
+      },
+    }
+  );
+}
+```
+
+## Initial Query Data
+
+Ways to supply initial data for a query to the cache before you need it.
+
+- Declaratively:
+  - Provide `initialData` to a query to prepopulate its cache if empty
+- Imperatively:
+  - Prefetch the data using `queryClient.prefetchQuery`
+  - Manually place the data into the cache using `queryClient.setQueryData`
+
+### Using `initialData` to prepopulate a query
+
+reference at `/src/Guides_and_Concepts/InitialQueryData.js`
+
+[Initial Query Data Documentation](https://react-query.tanstack.com/guides/initial-query-data)
+
+You can use the config.initialData option to set the initial data for a query and skip the initial loading state
+
+> IMPORTANT: `intitialData` is persisted to the cache, so it is not recommended to provide placeholder, partial or incomplete data to this option and instead use `placeholderData`
+
+```javascript
+function Todos() {
+  const result = useQuery('todos', () => fetch('/todos'), {
+    initialData: initialTodos,
+  });
+}
+```
+
+### `staleTime` and `initialDataUpdatedAt`
+
+If you configure your query observer with initialData and a staleTime of 1000 ms, the data will be considered fresh for that same amount of time, as if it was just fetched from your query function.
+
+```javascript
+function Todos() {
+  // Show initialTodos immediately, but won't refetch until another interaction event is encountered after 1000 ms
+   function Todos() {
+   // Show initialTodos immeidately, but won't refetch until another interaction event is encountered after 1000 ms
+   const result = useQuery('todos', () => fetch('/todos'), {
+     initialData: initialTodos,
+     staleTime: 60 * 1000 // 1 minute
+     // This could be 10 seconds ago or 10 minutes ago
+     initialDataUpdatedAt: initialTodosUpdatedTimestamp // eg. 1608412420052
+   })
+ }
+}
+```
+
+> If you would rather treat your data as prefetched data, we recommend that you use the `prefetchQuery` or `fetchQuery` APIs to populate the cache beforehand, thus letting you configure your `staleTime` independently from your initialData
+
+### Initial Data Function
+
+This function will be executed only once when the query is initialized, saving you precious memory and/or CPU:
+
+```javascript
+function Todos() {
+  const result = useQuery('todos', () => fetch('/todos'), {
+    initialData: () => {
+      return getExpensiveTodos();
+    },
+  });
+}
+```
+
+### Initial Data from Cache with optional `initialDataUpdatedAt`
+
+```javascript
+function Todo({ todoId }) {
+  const result = useQuery(['todo', todoId], () => fetch(`/todos/${todoId}`), {
+    initialData: () =>
+      queryClient.getQueryData('todos')?.find((d) => d.id === todoId),
+    initialDataUpdatedAt: () =>
+      queryClient.getQueryState('todos')?.dataUpdatedAt,
+  });
+}
+```
+
+### Conditional Initial Data from Cache
+
+If the source query you're using to look up the initial data from is old, you may not want to use the cached data at all and just fetch from the server. To make this decision easier, you can use the `queryClient.getQueryState` method instead to get more information about the source query, including a `state.dataUpdatedAt` timestamp you can use to decide if the query is "fresh" enough for your needs:
+
+```javascript
+function Todo({ todoId }) {
+  const result = useQuery(['todo', todoId], () => fetch(`/todos/${todoId}`), {
+    initialData: () => {
+      // Get the query state
+      const state = queryClient.getQueryState('todos');
+
+      // If the query exists and has data that is no older than 10 seconds...
+      if (state && Date.now() - state.dataUpdatedAt <= 10 * 1000) {
+        // return the individual todo
+        return state.data.find((d) => d.id === todoId);
+      }
+
+      // Otherwise, return undefined and let it fetch from a hard loading state!
+    },
+  });
+}
+```
+
+## Prefetching
+
+You can use the `prefetchQuery` method to prefetch the results of a query to be placed into the cache:
+
+```javascript
+const prefetchTodos = async () => {
+  // The results of this query will be cached like a normal query
+  await queryClient.prefetchQuery('todos', fetchTodos);
+};
+```
+
+- If data for this query is already in the cache and **not invalidated**, the data will not be fetched
+- If a `staleTime` is passed eg. `prefetchQuery('todos', fn, { staleTime: 5000 })` and the data is older than the specified staleTime, the query will be fetched
+- If no instances of `useQuery` appear for a prefetched query, it will be deleted and garbage collected after the time specified in `cacheTime`
+
+### Manually Priming a Query
+
+**If you don't need to prefetch it**. You can just use the **Query Client's** `setQueryData` method to directly add or update a query's cached result by key.
+
+```javascript
+queryClient.setQueryData('todos', todos);
+```
