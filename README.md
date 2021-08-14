@@ -507,3 +507,13 @@ function Todos() {
 ```
 
 the `keepPreviousData` option also works flawlessly with the `useInfiniteQuery` hook.
+
+## Infinite Queries
+
+Using `useInfiniteQuery` is common if you wanted to add "load more" onto an existing set of data or "infinite scroll".
+
+[Infinite Queries Documentation](https://react-query.tanstack.com/guides/infinite-queries)
+
+reference in `src/Guides_and_Concepts/InfiniteQueries.js`;
+
+##
