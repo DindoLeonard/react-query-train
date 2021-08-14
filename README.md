@@ -389,3 +389,54 @@ function Todos() {
   );
 }
 ```
+
+## Query Retries
+
+React Query will automatically retry the query's request to default of `3`.
+
+You can configure retries both on global and individual query level.
+
+- Setting `retry = false` will disable retries.
+- Setting `retry = 6` will retry 6 times before final error is thrown
+- Setting `retry = true` will **infinitely** retry failing requests
+- Setting `retry = (failureCount, error) => ...` allows for custom logic based on why the request failed.
+
+```javascript
+import { useQuery } from 'react-query';
+
+// Make a specific query retry a certain number of times
+const result = useQuery(['todos', 1], fetchTodoListPage, {
+  retry: 10, // Will retry failed requests 10 times before displaying an error
+});
+```
+
+## Retry Delay
+
+By dafault, retries in React Query do not happen immediately after a request fails.
+
+The default `retryDelay` is set to double (starting at `1000` ms) with each attempt, but not exceed 30 seconds:
+
+```javascript
+// Configure for all queries
+import { QueryCache, QueryClient, QueryClientProvider } from 'react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
+  },
+});
+
+function App() {
+  return <QueryClientProvider client={queryClient}>...</QueryClientProvider>;
+}
+```
+
+You can also override the `retryDelay` function/integer in both the Provider and Individual query options. Though it is _not recommeded_.
+
+```javascript
+const result = useQuery('todos', fetchTodoList, {
+  retryDelay: 1000, // Will always wait 1000ms to retry, regardless of how many retries
+});
+```
