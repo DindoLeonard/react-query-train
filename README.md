@@ -272,3 +272,120 @@ function GlobalLoadingIndicator() {
   ) : null;
 }
 ```
+
+## Windows Focus Refetching
+
+If a user leaves your application and returns to stale data, **React Query automatically requests fresh data for you in the background**. You can disable this globally or per-query using the `refetchOnWindowFocus` option
+
+### Disabling Globally
+
+```javascript
+//
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function App() {
+  return <QueryClientProvider client={queryClient}>...</QueryClientProvider>;
+}
+```
+
+### Disabling Per-Query
+
+```javascript
+useQuery('todos', fetchTodos, { refetchOnWindowFocus: false });
+```
+
+### Custom Window Focus Event
+
+React Query provides a focusManager.setEventListener function that supplies you the callback that should be fired when the window is focused and allows you to set up your own events. When calling focusManager.setEventListener, the previously set handler is removed (which in most cases will be the default handler) and your new handler is used instead. For example, this is the default handler:
+
+```javascript
+focusManager.setEventListener((handleFocus) => {
+  // Listen to visibillitychange and focus
+  if (typeof window !== 'undefined' && window.addEventListener) {
+    window.addEventListener('visibilitychange', handleFocus, false);
+    window.addEventListener('focus', handleFocus, false);
+  }
+
+  return () => {
+    // Be sure to unsubscribe if a new handler is set
+    window.removeEventListener('visibilitychange', handleFocus);
+    window.removeEventListener('focus', handleFocus);
+  };
+});
+```
+
+### Ignoring Iframe Focus Events
+
+A great use-case for replacing the focus handler is that of **iframe** events. Iframes present problems with detecting window focus by both double-firing events and also firing false-positive events when focusing or using iframes within your app. If you experience this, you should use an event handler that ignores these events as much as possible.
+
+```javascript
+import { focusManager } from 'react-query';
+import onWindowFocus from './onWindowFocus'; // The gist above
+
+focusManager.setEventListener(onWindowFocus); // Boom!
+```
+
+### Managing focus state
+
+```javascript
+import { focusManager } from 'react-query';
+
+// Override the default focus state
+focusManager.setFocused(true);
+
+// Fallback to the default focus check
+focusManager.setFocused(undefined);
+```
+
+## Disabling/Pausing Queries
+
+You can use `enabled = false` option in the configuration of your `useQuery`
+
+When `enabled` is `false`:
+
+- If the query has cached data
+  - The query will be initialized in the `status === 'success'` or `isSuccess` state.
+- If the query does not have cached data
+  - The query will start in the `status === idle` or `isIdle` state.
+- The query will not automatically fetch on mount
+- The query will not automatically refetch in the background when new instances mount or new instances appearing
+- The query will ignore query client `invalidateQueries` and `refetchQueries` calls that would normally result in the query refetching.
+- `refetch` can be used to manually trigger the query to fetch
+
+```javascript
+function Todos() {
+  const { isIdle, isLoading, isError, data, error, refetch, isFetching } =
+    useQuery('todos', fetchTodoList, {
+      enabled: false,
+    });
+
+  return (
+    <>
+      <button onClick={() => refetch()}>Fetch Todos</button>
+
+      {isIdle ? (
+        'Not ready...'
+      ) : isLoading ? (
+        <span>Loading...</span>
+      ) : isError ? (
+        <span>Error: {error.message}</span>
+      ) : (
+        <>
+          <ul>
+            {data.map((todo) => (
+              <li key={todo.id}>{todo.title}</li>
+            ))}
+          </ul>
+          <div>{isFetching ? 'Fetching...' : null}</div>
+        </>
+      )}
+    </>
+  );
+}
+```
