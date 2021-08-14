@@ -440,3 +440,70 @@ const result = useQuery('todos', fetchTodoList, {
   retryDelay: 1000, // Will always wait 1000ms to retry, regardless of how many retries
 });
 ```
+
+## Paginated/Lagged Queries
+
+Rendering paginated data is a very common UI pattern and in React Query, it "just works" by including the page information in the query key:
+
+```javascript
+const result = useQuery(['projects', page], fetchProjects);
+```
+
+### Better Paginated Queries with `keepPreviousData`
+
+If we were to use useQuery, it would still technically work fine, but the UI would jump in and out of the success and loading states as different queries are created and destroyed for each page or cursor. By setting keepPreviousData to true we get a few new things:
+
+- **The data from the last successful fetch available while new data is being requested, even though the query key has changed**
+- When the new data arrives, the previous data is seamlessly swapped to show the new data.
+- `isPreviousData` is made available to know what data the query is currently providing you
+
+```javascript
+function Todos() {
+  const [page, setPage] = React.useState(0);
+
+  const fetchProjects = (page = 0) =>
+    fetch('/api/projects?page=' + page).then((res) => res.json());
+
+  const { isLoading, isError, error, data, isFetching, isPreviousData } =
+    useQuery(['projects', page], () => fetchProjects(page), {
+      keepPreviousData: true,
+    });
+
+  return (
+    <div>
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : isError ? (
+        <div>Error: {error.message}</div>
+      ) : (
+        <div>
+          {data.projects.map((project) => (
+            <p key={project.id}>{project.name}</p>
+          ))}
+        </div>
+      )}
+      <span>Current Page: {page + 1}</span>
+      <button
+        onClick={() => setPage((old) => Math.max(old - 1, 0))}
+        disabled={page === 0}
+      >
+        Previous Page
+      </button>{' '}
+      <button
+        onClick={() => {
+          if (!isPreviousData && data.hasMore) {
+            setPage((old) => old + 1);
+          }
+        }}
+        // Disable the Next Page button until we know a next page is available
+        disabled={isPreviousData || !data?.hasMore}
+      >
+        Next Page
+      </button>
+      {isFetching ? <span> Loading...</span> : null}{' '}
+    </div>
+  );
+}
+```
+
+the `keepPreviousData` option also works flawlessly with the `useInfiniteQuery` hook.
