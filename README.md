@@ -1006,3 +1006,50 @@ const query = useQuery('todos', () => {
   return promise;
 });
 ```
+
+### Scroll Restoration
+
+Traditionally, when you navigate to a previously visited page on a web browser, you would find that the page would be scrolled to the exact position where you were before you navigated away from that page. This is called **scroll restoration** and has been in a bit of a regression since web applications have started moving towards client side data fetching. With React Query however, that's no longer the case.
+
+Out of the box, "scroll restoration" for all queries (including paginated and infinite queries) Just Works™️ in React Query. The reason for this is that query results are cached and able to be retrieved synchronously when a query is rendered. As long as your queries are being cached long enough (the default time is 5 minutes) and have not been garbage collected, scroll restoration will work out of the box all the time.
+
+## Filters
+
+[FILTERS DOCUMENTATION](https://react-query.tanstack.com/guides/filters)
+
+Some methods within React Query accept a `QueryFilters` or `MutationFilters` object
+
+### Query Filters
+
+A query filter is an object with certain conditions to match a query with:
+
+```javascript
+// Cancel all queries
+await queryClient.cancelQueries();
+
+// Remove all inactive queries that begin with `posts` in the key
+queryClient.removeQueries('posts', { inactive: true });
+
+// Refetch all active queries
+await queryClient.refetchQueries({ active: true });
+
+// Refetch all active queries that begin with `posts` in the key
+await queryClient.refetchQueries('posts', { active: true });
+```
+
+### Mutation Filters
+
+A mutation filter is an object with certain conditions to match a mutation with:
+
+```javascript
+// Get the number of all fetching mutations
+await queryClient.isMutating();
+
+// Filter mutations by mutationKey
+await queryClient.isMutating({ mutationKey: 'post' });
+
+// Filter mutations using a predicate function
+await queryClient.isMutating({
+  predicate: (mutation) => mutation.options.variables?.id === 1,
+});
+```
