@@ -848,3 +848,21 @@ const todoListQuery = useQuery(['todos', { version: 5 }], fetchTodoList);
 ```
 
 ## Invalidation from Mutations
+
+Invalidating queries is only half the battle. Knowing **when** to invalidate them is the other half. Usually when a mutation in your app succeeds, it's VERY likely that there are related queries in your application that need to be invalidated and possibly refetched to account for the new changes from your mutation.
+
+```javascript
+import { useMutation, useQueryClient } from 'react-query';
+
+const queryClient = useQueryClient();
+
+// When this mutation succeeds, invalidate any queries with the `todos` or `reminders` query key
+const mutation = useMutation(addTodo, {
+  onSuccess: () => {
+    queryClient.invalidateQueries('todos');
+    queryClient.invalidateQueries('reminders');
+  },
+});
+```
+
+##
