@@ -1,14 +1,13 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from 'react-query';
-
-import InfiniteQueries from '../Guides_and_Concepts/InfiniteQueries';
+import Mutations from '../Guides_and_Concepts/Mutations';
 
 export const queryClient = new QueryClient();
 
 const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <InfiniteQueries />
+      <Mutations />
     </QueryClientProvider>
   );
 };

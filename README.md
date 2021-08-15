@@ -690,3 +690,101 @@ const prefetchTodos = async () => {
 ```javascript
 queryClient.setQueryData('todos', todos);
 ```
+
+## Mutations
+
+[Mutations Documentation](https://react-query.tanstack.com/guides/mutations)
+
+**IMPORTATNT** reference in `/src/Guides_and_Concepts/Mutations.js`
+
+Unlike queries, mutations are typically used to create/update/delete data or perform server side-effects. For this purpose, React Query exports a `useMutation` hook.
+
+Here's an example of a mutation that adds a new todo to the server:
+
+```javascript
+function App() {
+  const mutation = useMutation((newTodo) => axios.post('/todos', newTodo));
+
+  return (
+    <div>
+      {mutation.isLoading ? (
+        'Adding todo...'
+      ) : (
+        <>
+          {mutation.isError ? (
+            <div>An error occurred: {mutation.error.message}</div>
+          ) : null}
+
+          {mutation.isSuccess ? <div>Todo added!</div> : null}
+
+          <button
+            onClick={() => {
+              mutation.mutate({ id: new Date(), title: 'Do Laundry' });
+            }}
+          >
+            Create Todo
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+```
+
+> IMPORTANT: The mutate function is an asynchronous function, which means you cannot use it directly in an event callback in **React 16 and earlier**. If you need to access the event in onSubmit you need to wrap mutate in another function. This is due to **React event pooling**.
+
+```javascript
+// This will not work in React 16 and earlier
+const CreateTodo = () => {
+  const mutation = useMutation((event) => {
+    event.preventDefault();
+    return fetch('/api', new FormData(event.target));
+  });
+
+  return <form onSubmit={mutation.mutate}>...</form>;
+};
+
+// This will work
+const CreateTodo = () => {
+  const mutation = useMutation((formData) => {
+    return fetch('/api', formData);
+  });
+  const onSubmit = (event) => {
+    event.preventDefault();
+    mutation.mutate(new FormData(event.target));
+  };
+
+  return <form onSubmit={onSubmit}>...</form>;
+};
+```
+
+### Resetting Mutation State
+
+It's sometimes the case that you need to clear the `error` or `data` of a mutation request. To do this, you can use the `reset` function to handle this:
+
+```javascript
+const CreateTodo = () => {
+  const [title, setTitle] = useState('');
+  const mutation = useMutation(createTodo);
+
+  const onCreateTodo = (e) => {
+    e.preventDefault();
+    mutation.mutate({ title });
+  };
+
+  return (
+    <form onSubmit={onCreateTodo}>
+      {mutation.error && (
+        <h5 onClick={() => mutation.reset()}>{mutation.error}</h5>
+      )}
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+      />
+      <br />
+      <button type="submit">Create Todo</button>
+    </form>
+  );
+};
+```
