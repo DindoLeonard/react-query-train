@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation, useQueryClient } from 'react-query';
-import { dehydrate } from 'react-query/hydration';
+import { dehydrate, hydrate } from 'react-query/hydration';
 import axios from 'axios';
 
 // function Mutations() {
@@ -48,9 +48,13 @@ const Mutations = () => {
       const todoData = queryClient.getQueryData('todo') || undefined;
       const testQueryData = queryClient.getQueryData('testQuery');
       const state = queryClient.getQueryCache();
+
+      // dehydrate the state
       const dehydrated = dehydrate(queryClient);
       queryClient.resetQueries();
       const afterState = queryClient.getQueryData('testQuery');
+      // hydrate it back again
+      hydrate(queryClient, dehydrated);
 
       console.log('TODO', todo);
       console.log('TEST-QUERY', testQuery);
