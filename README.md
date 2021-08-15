@@ -865,4 +865,90 @@ const mutation = useMutation(addTodo, {
 });
 ```
 
-##
+## Updates from Mutation Responses
+
+When dealing with mutations that **update** objects on the server, it's common for the new object to be automatically returned in the response of the mutation. Instead of refetching any queries for that item and wasting a network call for data we already have, we can take advantage of the object returned by the mutation function and update the existing query with the new data immediately using the **Query Client's** `setQueryData` method:
+
+```javascript
+const queryClient = useQueryClient();
+
+const mutation = useMutation(editTodo, {
+  onSuccess: (data) => {
+    queryClient.setQueryData(['todo', { id: 5 }], data);
+  },
+});
+
+mutation.mutate({
+  id: 5,
+  name: 'Do the laundry',
+});
+
+// The query below will be updated with the response from the
+// successful mutation
+const { status, data, error } = useQuery(['todo', { id: 5 }], fetchTodoById);
+```
+
+You might want to tie the `onSuccess` logic into a reusable mutation, for that you can create a custom hook like this:
+
+```javascript
+const useMutateTodo = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(editTodo, {
+    // Notice the second argument is the variables object that the `mutate` function receives
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['todo', { id: variables.id }], data);
+    },
+  });
+};
+```
+
+## Optimistic Updates
+
+To do this, `useMutation's` `onMutate` handler option allows you to return a value that will later be passed to both `onError` and `onSettled` handlers as the last argument. In most cases, it is most useful to pass a rollback function.
+
+### Updating a list of todos when adding a new todo
+
+```javascript
+const queryClient = useQueryClient();
+
+useMutation(updateTodo, {
+  // When mutate is called:
+  onMutate: async (newTodo) => {
+    // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+    await queryClient.cancelQueries('todos');
+
+    // Snapshot the previous value
+    const previousTodos = queryClient.getQueryData('todos');
+
+    // Optimistically update to the new value
+    queryClient.setQueryData('todos', (old) => [...old, newTodo]);
+
+    // Return a context object with the snapshotted value
+    return { previousTodos };
+  },
+  // If the mutation fails, use the context returned from onMutate to roll back
+  onError: (err, newTodo, context) => {
+    queryClient.setQueryData('todos', context.previousTodos);
+  },
+  // Always refetch after error or success:
+  onSettled: () => {
+    queryClient.invalidateQueries('todos');
+  },
+});
+```
+
+You can also use the `onSettled` function in place of the separate `onError` and `onSuccess` handlers if you wish:
+
+```javascript
+useMutation(updateTodo, {
+  // ...
+  onSettled: (newTodo, error, variables, context) => {
+    if (error) {
+      // do something
+    }
+  },
+});
+```
+
+## Query Cancellation
