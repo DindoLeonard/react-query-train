@@ -1139,3 +1139,11 @@ function Post({ postId }) {
   // ...
 }
 ```
+
+## Suspense
+
+[Suspense Documentation - React Query](https://react-query.tanstack.com/guides/suspense)
+
+## Testing
+
+[Testing in React Query](https://react-query.tanstack.com/guides/testing)

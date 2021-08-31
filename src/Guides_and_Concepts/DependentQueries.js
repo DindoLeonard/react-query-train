@@ -16,6 +16,8 @@ const DependentQueries = ({ email, getUserByEmail, getProjectsByUser }) => {
     }
   );
 
+  console.log(isIdle, projects);
+
   // isIdle will be `true` until `enabled` is true and the query begins to fetch.
   // It will then go to the `isLoading` stage and hopefully the `isSuccess` stage :)
 };
